@@ -1,0 +1,39 @@
+name: Unit test reporting
+on:
+  workflow_dispatch:
+defaults:
+  run:
+    working-directory: test/unit
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      # Setups dotnet 6
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '6.0.x'
+
+      # restore all needed packages for our project
+      - name: Restore dependencies
+        run: dotnet restore
+        
+      - name: Build
+        run: dotnet build --configuration Release
+
+      - name: Test
+        run: dotnet test --logger "trx;LogFileName=test-results.trx" || true  
+        
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+            name: DotNET Tests
+            path: "**/test-results.trx"                            
+            reporter: dotnet-trx
+            fail-on-error: true
+        
